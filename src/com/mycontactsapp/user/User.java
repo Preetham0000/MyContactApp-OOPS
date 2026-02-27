@@ -1,3 +1,13 @@
+/**
+ * UC 1: User Registration
+ * - Encapsulating user profile data
+ * - Validating input during registration
+ * - Hashing user passwords
+ * - Encapsulation
+ * - Input validation
+ * - Password hashing
+ */
+
 package com.mycontactsapp.user;
 
 import java.util.Objects;
@@ -6,18 +16,7 @@ import com.mycontactsapp.ExceptionHandling.InvalidInputException;
 import com.mycontactsapp.validation.EmailValidator;
 import com.mycontactsapp.validation.PasswordValidator;
 
-/**
- * Use Case 1: User Registration
- * This class is responsible for:
- * - Encapsulating user profile data
- * - Validating registration inputs
- * - Hashing user passwords
- *
- * Demonstrates:
- * - Encapsulation
- * - Input validation
- * - Password hashing
- */
+
 public class User {
     private final String firstName;
     private final String lastName;
@@ -38,8 +37,8 @@ public class User {
         EmailValidator emailValidator = new EmailValidator();
         PasswordValidator passwordValidator = new PasswordValidator();
 
-        String sanitizedFirstName = requireNonBlank(firstName, "First name is required.");
-        String sanitizedLastName = requireNonBlank(lastName, "Last name is required.");
+        String sanitizedFirstName = NonBlank(firstName, "First name is required.");
+        String sanitizedLastName = NonBlank(lastName, "Last name is required.");
         String normalizedEmail = emailValidator.validate(email);
         String validatedPassword = passwordValidator.validate(password);
         UserType resolvedUserType = Objects.requireNonNullElse(userType, UserType.FREE);
@@ -70,7 +69,7 @@ public class User {
         return passwordHash.equals(passwordValidator.hashSimple(validatedPassword));
     }
 
-    private static String requireNonBlank(String value, String message) throws InvalidInputException {
+    private static String NonBlank(String value, String message) throws InvalidInputException {
         if (value == null || value.trim().isEmpty()) {
             throw new InvalidInputException(message);
         }
