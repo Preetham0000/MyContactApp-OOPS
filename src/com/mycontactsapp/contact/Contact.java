@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.mycontactsapp.ExceptionHandling.InvalidInputException;
@@ -82,6 +83,29 @@ public abstract class Contact {
             throw new InvalidInputException("Field value is required.");
         }
         optionalFields.put(key, value);
+    }
+
+    public ContactView toView() {
+        String contactType = getClass().getSimpleName();
+        Optional<String> orgName = Optional.empty();
+        Optional<String> contactPerson = Optional.empty();
+        Optional<String> personName = Optional.empty();
+
+        if (this instanceof OrganizationContact) {
+            OrganizationContact org = (OrganizationContact) this;
+            orgName = Optional.of(org.getOrganizationName());
+            if (org.getContactPerson() != null && !org.getContactPerson().isEmpty()) {
+                contactPerson = Optional.of(org.getContactPerson());
+            }
+        }
+
+        if (this instanceof PersonContact) {
+            PersonContact person = (PersonContact) this;
+            personName = Optional.of(person.getFirstName() + " " + person.getLastName());
+        }
+
+        return new ContactView(id, displayName, contactType, phoneNumbers, emailAddresses, optionalFields,
+                personName, orgName, contactPerson);
     }
 
     @Override
@@ -259,6 +283,47 @@ public abstract class Contact {
 
         public List<Contact> getContacts() {
             return Collections.unmodifiableList(contacts);
+        }
+    }
+
+    public static class ContactView {
+        private final UUID id;
+        private final String displayName;
+        private final String contactType;
+        private final List<PhoneNumber> phoneNumbers;
+        private final List<EmailAddress> emailAddresses;
+        private final Map<String, String> optionalFields;
+        private final Optional<String> personName;
+        private final Optional<String> organizationName;
+        private final Optional<String> contactPerson;
+
+        public ContactView(UUID id, String displayName, String contactType,
+                List<PhoneNumber> phoneNumbers, List<EmailAddress> emailAddresses,
+                Map<String, String> optionalFields, Optional<String> personName,
+                Optional<String> organizationName, Optional<String> contactPerson) {
+            this.id = id;
+            this.displayName = displayName;
+            this.contactType = contactType;
+            this.phoneNumbers = Collections.unmodifiableList(new ArrayList<>(phoneNumbers));
+            this.emailAddresses = Collections.unmodifiableList(new ArrayList<>(emailAddresses));
+            this.optionalFields = Collections.unmodifiableMap(new LinkedHashMap<>(optionalFields));
+            this.personName = personName;
+            this.organizationName = organizationName;
+            this.contactPerson = contactPerson;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Contact Details\nID: %s\nName: %s\nType: %s\nPerson: %s\nOrganization: %s\nContact Person: %s\nPhones: %s\nEmails: %s\nOptional: %s",
+                    id,
+                    displayName,
+                    contactType,
+                    personName.orElse("N/A"),
+                    organizationName.orElse("N/A"),
+                    contactPerson.orElse("N/A"),
+                    phoneNumbers,
+                    emailAddresses,
+                    optionalFields);
         }
     }
 }

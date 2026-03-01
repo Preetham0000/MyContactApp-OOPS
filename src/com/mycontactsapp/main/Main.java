@@ -6,7 +6,7 @@
  * 
  *
  * @author Developer
- * @version 4.0
+ * @version 5.0
  */
 
 package com.mycontactsapp.main;
@@ -31,7 +31,7 @@ public class Main {
             while (true) {
                 System.out.println("\nMy Contact App");
                 System.out.print("Choose action (signup/login/exit): ");
-                String action = scanner.nextLine().trim().toLowerCase();
+                String action = scanner.nextLine().toLowerCase();
 
                 if ("signup".equals(action)) {
                     handleSignup(scanner, registeredUsers);
@@ -101,8 +101,8 @@ public class Main {
         // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/logout): ");
-            String action = scanner.nextLine().trim().toLowerCase();
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/logout): ");
+            String action = scanner.nextLine().toLowerCase();
 
             if ("update-profile".equals(action)) {
                 updateProfile(scanner, user);
@@ -112,11 +112,13 @@ public class Main {
                 updatePreferences(scanner, user);
             } else if ("create contact".equals(action) || "create-contact".equals(action)) {
                 createContact(scanner, user);
+            } else if ("view contact".equals(action) || "view-contact".equals(action)) {
+                viewContactDetails(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, or logout.");
             }
         }
     }
@@ -179,7 +181,7 @@ public class Main {
     private static void createContact(Scanner scanner, User user) {
         try {
             System.out.print("Contact type (person/organization): ");
-            String typeInput = scanner.nextLine().trim().toLowerCase();
+            String typeInput = scanner.nextLine().toLowerCase();
             Contact contact;
 
             if ("person".equals(typeInput)) {
@@ -203,7 +205,7 @@ public class Main {
             while (true) {
                 System.out.print("Add phone label (or press Enter to stop): ");
                 String label = scanner.nextLine();
-                if (label.trim().isEmpty()) {
+                if (label.isEmpty()) {
                     break;
                 }
                 System.out.print("Phone number: ");
@@ -215,7 +217,7 @@ public class Main {
             while (true) {
                 System.out.print("Add email label (or press Enter to stop): ");
                 String label = scanner.nextLine();
-                if (label.trim().isEmpty()) {
+                if (label.isEmpty()) {
                     break;
                 }
                 System.out.print("Email address: ");
@@ -227,7 +229,7 @@ public class Main {
             while (true) {
                 System.out.print("Add optional field name (or press Enter to stop): ");
                 String key = scanner.nextLine();
-                if (key.trim().isEmpty()) {
+                if (key.isEmpty()) {
                     break;
                 }
                 System.out.print("Field value: ");
@@ -239,6 +241,32 @@ public class Main {
             System.out.println("Contact created with ID: " + contact.getId());
         } catch (InvalidInputException e) {
             System.out.println("Contact creation failed: " + e.getMessage());
+        }
+    }
+
+    private static void viewContactDetails(Scanner scanner, User user) {
+        if (user.getContactBook().getContacts().isEmpty()) {
+            System.out.println("No contacts saved yet.");
+            return;
+        }
+
+        System.out.println("Saved contacts:");
+        for (Contact contact : user.getContactBook().getContacts()) {
+            System.out.println(contact.getId() + " - " + contact.getDisplayName());
+        }
+
+        System.out.print("Enter contact ID to view details: ");
+        String idInput = scanner.nextLine();
+        if (idInput.isEmpty()) {
+            System.out.println("Contact ID is required.");
+            return;
+        }
+
+        Optional<Contact> found = findContactById(user.getContactBook().getContacts(), idInput);
+        if (found.isPresent()) {
+            System.out.println(found.get().toView());
+        } else {
+            System.out.println("Contact not found.");
         }
     }
 
@@ -272,7 +300,7 @@ public class Main {
         if (input == null) {
             throw new InvalidInputException("User type is required.");
         }
-        String normalized = input.trim().toUpperCase();
+        String normalized = input.toUpperCase();
         switch (normalized) {
             case "FREE":
                 return UserType.FREE;
@@ -280,6 +308,20 @@ public class Main {
                 return UserType.PREMIUM;
             default:
                 throw new InvalidInputException("User Type is either FREE or PREMIUM");
+        }
+    }
+
+    private static Optional<Contact> findContactById(List<Contact> contacts, String idInput) {
+        try {
+            UUID id = UUID.fromString(idInput);
+            for (Contact contact : contacts) {
+                if (contact.getId().equals(id)) {
+                    return Optional.of(contact);
+                }
+            }
+            return Optional.empty();
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
         }
     }
 }
