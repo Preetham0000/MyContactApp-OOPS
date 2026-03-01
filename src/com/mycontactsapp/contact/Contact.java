@@ -1,0 +1,264 @@
+package com.mycontactsapp.contact;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import com.mycontactsapp.ExceptionHandling.InvalidInputException;
+import com.mycontactsapp.validation.EmailValidator;
+
+/**
+ * Base type for contacts with phones, emails, and optional fields.
+ */
+public abstract class Contact {
+    // Base contact holds shared details used by both people and organizations.
+    // It also collects phones/emails as separate value objects.
+    private final UUID id;
+    private String displayName;
+    private final List<PhoneNumber> phoneNumbers;
+    private final List<EmailAddress> emailAddresses;
+    private final Map<String, String> optionalFields;
+
+    protected Contact(String displayName) throws InvalidInputException {
+        if (displayName == null || displayName.isEmpty()) {
+            throw new InvalidInputException("Display name is required.");
+        }
+        this.id = UUID.randomUUID();
+        this.displayName = displayName;
+        this.phoneNumbers = new ArrayList<>();
+        this.emailAddresses = new ArrayList<>();
+        this.optionalFields = new LinkedHashMap<>();
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    protected void setDisplayName(String displayName) throws InvalidInputException {
+        if (displayName == null || displayName.isEmpty()) {
+            throw new InvalidInputException("Display name is required.");
+        }
+        this.displayName = displayName;
+    }
+
+    public List<PhoneNumber> getPhoneNumbers() {
+        return Collections.unmodifiableList(phoneNumbers);
+    }
+
+    public List<EmailAddress> getEmailAddresses() {
+        return Collections.unmodifiableList(emailAddresses);
+    }
+
+    public Map<String, String> getOptionalFields() {
+        return Collections.unmodifiableMap(optionalFields);
+    }
+
+    public void addPhoneNumber(PhoneNumber phoneNumber) throws InvalidInputException {
+        if (phoneNumber == null) {
+            throw new InvalidInputException("Phone number is required.");
+        }
+        phoneNumbers.add(phoneNumber);
+    }
+
+    public void addEmailAddress(EmailAddress emailAddress) throws InvalidInputException {
+        if (emailAddress == null) {
+            throw new InvalidInputException("Email address is required.");
+        }
+        emailAddresses.add(emailAddress);
+    }
+
+    public void addOptionalField(String key, String value) throws InvalidInputException {
+        if (key == null || key.isEmpty()) {
+            throw new InvalidInputException("Field name is required.");
+        }
+        if (value == null || value.isEmpty()) {
+            throw new InvalidInputException("Field value is required.");
+        }
+        optionalFields.put(key, value);
+    }
+
+    @Override
+    public String toString() {
+        return "Contact{" +
+                "id=" + id +
+                ", displayName='" + displayName + '\'' +
+                ", phoneNumbers=" + phoneNumbers +
+                ", emailAddresses=" + emailAddresses +
+                ", optionalFields=" + optionalFields +
+                '}';
+    }
+
+    public static class PhoneNumber {
+        // Phone number is stored as its own object, attached to a contact.
+        // This keeps label and number together in one place.
+        private final String label;
+        private final String number;
+
+        public PhoneNumber(String label, String number) throws InvalidInputException {
+            if (label == null || label.isEmpty()) {
+                throw new InvalidInputException("Phone label is required.");
+            }
+            if (number == null || number.isEmpty()) {
+                throw new InvalidInputException("Phone number is required.");
+            }
+            this.label = label;
+            this.number = number;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public String getNumber() {
+            return number;
+        }
+
+        @Override
+        public String toString() {
+            return label + ": " + number;
+        }
+    }
+
+    public static class EmailAddress {
+        // Email address is stored as its own object, attached to a contact.
+        // This keeps label and address together in one place.
+        private final String label;
+        private final String address;
+
+        public EmailAddress(String label, String address) throws InvalidInputException {
+            if (label == null || label.isEmpty()) {
+                throw new InvalidInputException("Email label is required.");
+            }
+            EmailValidator validator = new EmailValidator();
+            this.label = label;
+            this.address = validator.validate(address);
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        @Override
+        public String toString() {
+            return label + ": " + address;
+        }
+    }
+
+    public static class PersonContact extends Contact {
+        // Person contact extends the base contact with first and last names.
+        // This shows the contact hierarchy for individuals.
+        private String firstName;
+        private String lastName;
+
+        public PersonContact(String firstName, String lastName) throws InvalidInputException {
+            super(buildDisplayName(firstName, lastName));
+            if (firstName == null || firstName.isEmpty()) {
+                throw new InvalidInputException("First name is required.");
+            }
+            if (lastName == null || lastName.isEmpty()) {
+                throw new InvalidInputException("Last name is required.");
+            }
+            this.firstName = firstName;
+            this.lastName = lastName;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+
+        public void setFirstName(String firstName) throws InvalidInputException {
+            if (firstName == null || firstName.isEmpty()) {
+                throw new InvalidInputException("First name is required.");
+            }
+            this.firstName = firstName;
+            setDisplayName(buildDisplayName(this.firstName, this.lastName));
+        }
+
+        public void setLastName(String lastName) throws InvalidInputException {
+            if (lastName == null || lastName.isEmpty()) {
+                throw new InvalidInputException("Last name is required.");
+            }
+            this.lastName = lastName;
+            setDisplayName(buildDisplayName(this.firstName, this.lastName));
+        }
+
+        private static String buildDisplayName(String firstName, String lastName) throws InvalidInputException {
+            if (firstName == null || firstName.isEmpty()) {
+                throw new InvalidInputException("First name is required.");
+            }
+            if (lastName == null || lastName.isEmpty()) {
+                throw new InvalidInputException("Last name is required.");
+            }
+            return firstName + " " + lastName;
+        }
+    }
+
+    public static class OrganizationContact extends Contact {
+        // Organization contact extends the base contact with organization details.
+        // This shows the contact hierarchy for businesses.
+        private String organizationName;
+        private String contactPerson;
+
+        public OrganizationContact(String organizationName, String contactPerson) throws InvalidInputException {
+            super(validateOrgName(organizationName));
+            this.organizationName = validateOrgName(organizationName);
+            this.contactPerson = contactPerson == null ? "" : contactPerson;
+        }
+
+        public String getOrganizationName() {
+            return organizationName;
+        }
+
+        public String getContactPerson() {
+            return contactPerson;
+        }
+
+        public void setOrganizationName(String organizationName) throws InvalidInputException {
+            this.organizationName = validateOrgName(organizationName);
+            setDisplayName(this.organizationName);
+        }
+
+        public void setContactPerson(String contactPerson) {
+            this.contactPerson = contactPerson == null ? "" : contactPerson;
+        }
+
+        private static String validateOrgName(String organizationName) throws InvalidInputException {
+            if (organizationName == null || organizationName.isEmpty()) {
+                throw new InvalidInputException("Organization name is required.");
+            }
+            return organizationName;
+        }
+    }
+
+    public static class ContactBook {
+        // Contact book is a simple list owned by a user.
+        // It groups many contacts together in one place.
+        private final List<Contact> contacts = new ArrayList<>();
+
+        public void addContact(Contact contact) throws InvalidInputException {
+            if (contact == null) {
+                throw new InvalidInputException("Contact is required.");
+            }
+            contacts.add(contact);
+        }
+
+        public List<Contact> getContacts() {
+            return Collections.unmodifiableList(contacts);
+        }
+    }
+}

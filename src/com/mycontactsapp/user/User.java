@@ -15,6 +15,7 @@ import java.util.*;
 import com.mycontactsapp.ExceptionHandling.InvalidInputException;
 import com.mycontactsapp.validation.EmailValidator;
 import com.mycontactsapp.validation.PasswordValidator;
+import com.mycontactsapp.contact.Contact;
 
 
 public class User {
@@ -24,6 +25,7 @@ public class User {
     private String passwordHash;
     private UserType userType;
     private com.mycontactsapp.profile.UserPreferences preferences;
+    private com.mycontactsapp.contact.Contact.ContactBook contactBook;
 
     private User(String firstName, String lastName, String email, String passwordHash, UserType userType) {
         this.firstName = firstName;
@@ -32,6 +34,7 @@ public class User {
         this.passwordHash = passwordHash;
         this.userType = userType;
         this.preferences = new com.mycontactsapp.profile.UserPreferences();
+        this.contactBook = new com.mycontactsapp.contact.Contact.ContactBook();
     }
 
     public static User register(String firstName, String lastName, String email, String password, UserType userType)
@@ -39,14 +42,18 @@ public class User {
         EmailValidator emailValidator = new EmailValidator();
         PasswordValidator passwordValidator = new PasswordValidator();
 
-        String sanitizedFirstName = NonBlank(firstName, "First name is required.");
-        String sanitizedLastName = NonBlank(lastName, "Last name is required.");
+        if (firstName == null || firstName.isEmpty()) {
+            throw new InvalidInputException("First name is required.");
+        }
+        if (lastName == null || lastName.isEmpty()) {
+            throw new InvalidInputException("Last name is required.");
+        }
         String normalizedEmail = emailValidator.validate(email);
         String validatedPassword = passwordValidator.validate(password);
         UserType resolvedUserType = Objects.requireNonNullElse(userType, UserType.FREE);
 
         String passwordHash = passwordValidator.hashSimple(validatedPassword);
-        return new User(sanitizedFirstName, sanitizedLastName, normalizedEmail, passwordHash, resolvedUserType);
+        return new User(firstName, lastName, normalizedEmail, passwordHash, resolvedUserType);
     }
 
     public String getFirstName() {
@@ -65,6 +72,10 @@ public class User {
         return preferences;
     }
 
+    public com.mycontactsapp.contact.Contact.ContactBook getContactBook() {
+        return contactBook;
+    }
+
     public UserType getUserType() {
         return userType;
     }
@@ -79,6 +90,13 @@ public class User {
         setFirstName(firstName);
         setLastName(lastName);
         setEmail(email);
+    }
+
+    public void addContact(Contact contact) throws InvalidInputException {
+        if (contactBook == null) {
+            contactBook = new com.mycontactsapp.contact.Contact.ContactBook();
+        }
+        contactBook.addContact(contact);
     }
 
     public void changePassword(String currentPassword, String newPassword) throws InvalidInputException {
@@ -113,11 +131,17 @@ public class User {
     }
 
     public void setFirstName(String firstName) throws InvalidInputException {
-        this.firstName = NonBlank(firstName, "First name is required.");
+        if (firstName == null || firstName.isEmpty()) {
+            throw new InvalidInputException("First name is required.");
+        }
+        this.firstName = firstName;
     }
 
     public void setLastName(String lastName) throws InvalidInputException {
-        this.lastName = NonBlank(lastName, "Last name is required.");
+        if (lastName == null || lastName.isEmpty()) {
+            throw new InvalidInputException("Last name is required.");
+        }
+        this.lastName = lastName;
     }
 
     public void setEmail(String email) throws InvalidInputException {
@@ -129,12 +153,5 @@ public class User {
         PasswordValidator passwordValidator = new PasswordValidator();
         String validatedPassword = passwordValidator.validate(password);
         this.passwordHash = passwordValidator.hashSimple(validatedPassword);
-    }
-
-    private static String NonBlank(String value, String message) throws InvalidInputException {
-        if (value == null || value.trim().isEmpty()) {
-            throw new InvalidInputException(message);
-        }
-        return value.trim();
     }
 }

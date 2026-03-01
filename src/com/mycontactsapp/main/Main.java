@@ -1,12 +1,12 @@
 /**
- * MyContactApp - Use Case 1,2 and 3: Registration, Authentication and Profile Management
- 
+ * MyContactApp - Use Case 1,2,3 and 4: Registration, Authentication, Profile Management and Contact Creation
+ * 
  * It demonstrates basic registration with validation and simple authentication.
- * It also allows users to manage their profile and preferences.
+ * It also allows users to manage their profile, preferences, and contacts.
  * 
  *
  * @author Developer
- * @version 3.0
+ * @version 4.0
  */
 
 package com.mycontactsapp.main;
@@ -15,6 +15,7 @@ package com.mycontactsapp.main;
 import com.mycontactsapp.ExceptionHandling.InvalidInputException;
 import com.mycontactsapp.auth.AuthenticationStrategy;
 import com.mycontactsapp.auth.BasicAuth;
+import com.mycontactsapp.contact.Contact;
 import com.mycontactsapp.user.User;
 import com.mycontactsapp.user.UserType;
 
@@ -26,8 +27,9 @@ public class Main {
         AuthenticationStrategy authStrategy = new BasicAuth();
 
         try (Scanner scanner = new Scanner(System.in)) {
+            // Main menu loop
             while (true) {
-            	System.out.println("\nMy Contact App");
+                System.out.println("\nMy Contact App");
                 System.out.print("Choose action (signup/login/exit): ");
                 String action = scanner.nextLine().trim().toLowerCase();
 
@@ -96,9 +98,10 @@ public class Main {
     }
 
     private static void handleProfileMenu(Scanner scanner, User user) {
+        // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/logout): ");
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/logout): ");
             String action = scanner.nextLine().trim().toLowerCase();
 
             if ("update-profile".equals(action)) {
@@ -107,11 +110,13 @@ public class Main {
                 changePassword(scanner, user);
             } else if ("preferences".equals(action)) {
                 updatePreferences(scanner, user);
+            } else if ("create contact".equals(action) || "create-contact".equals(action)) {
+                createContact(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, or logout.");
             }
         }
     }
@@ -168,6 +173,72 @@ public class Main {
             System.out.println("Preferences updated: " + user.getPreferences());
         } catch (InvalidInputException e) {
             System.out.println("Preferences update failed: " + e.getMessage());
+        }
+    }
+
+    private static void createContact(Scanner scanner, User user) {
+        try {
+            System.out.print("Contact type (person/organization): ");
+            String typeInput = scanner.nextLine().trim().toLowerCase();
+            Contact contact;
+
+            if ("person".equals(typeInput)) {
+                System.out.print("First name: ");
+                String firstName = scanner.nextLine();
+                System.out.print("Last name: ");
+                String lastName = scanner.nextLine();
+                contact = new Contact.PersonContact(firstName, lastName);
+            } else if ("organization".equals(typeInput)) {
+                System.out.print("Organization name: ");
+                String orgName = scanner.nextLine();
+                System.out.print("Contact person (optional): ");
+                String contactPerson = scanner.nextLine();
+                contact = new Contact.OrganizationContact(orgName, contactPerson);
+            } else {
+                System.out.println("Invalid contact type. Please enter person or organization.");
+                return;
+            }
+
+            // Add multiple phone numbers
+            while (true) {
+                System.out.print("Add phone label (or press Enter to stop): ");
+                String label = scanner.nextLine();
+                if (label.trim().isEmpty()) {
+                    break;
+                }
+                System.out.print("Phone number: ");
+                String number = scanner.nextLine();
+                contact.addPhoneNumber(new Contact.PhoneNumber(label, number));
+            }
+
+            // Add multiple email addresses
+            while (true) {
+                System.out.print("Add email label (or press Enter to stop): ");
+                String label = scanner.nextLine();
+                if (label.trim().isEmpty()) {
+                    break;
+                }
+                System.out.print("Email address: ");
+                String address = scanner.nextLine();
+                contact.addEmailAddress(new Contact.EmailAddress(label, address));
+            }
+
+            // Optional fields
+            while (true) {
+                System.out.print("Add optional field name (or press Enter to stop): ");
+                String key = scanner.nextLine();
+                if (key.trim().isEmpty()) {
+                    break;
+                }
+                System.out.print("Field value: ");
+                String value = scanner.nextLine();
+                contact.addOptionalField(key, value);
+            }
+
+            user.addContact(contact);
+            System.out.println("Contact created with ID: " + contact.getId());
+        } catch (InvalidInputException e) {
+            System.out.println("Contact creation failed: " + e.getMessage());
         }
     }
 
