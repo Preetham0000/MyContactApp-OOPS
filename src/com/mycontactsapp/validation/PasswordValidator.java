@@ -4,13 +4,9 @@ import com.mycontactsapp.ExceptionHandling.InvalidInputException;
 
 /**
  * Use Case 1: User Registration
- * This class is responsible for:
  * - Validating password rules
- * - Creating a simple hashed representation
- *
- * Demonstrates:
  * - Input validation
- * - Basic hashing logic
+ * - using basic hashing logic
  */
 public class PasswordValidator {
     public String validate(String password) throws InvalidInputException {

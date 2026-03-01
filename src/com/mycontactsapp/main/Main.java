@@ -1,13 +1,12 @@
 /**
- * MyContactApp - Use Case 1 and 2: Registration and Authentication
- *
- * This class serves as the application entry point.
+ * MyContactApp - Use Case 1,2 and 3: Registration, Authentication and Profile Management
+ 
  * It demonstrates basic registration with validation and simple authentication.
- *
- * No persistence or contact list logic is implemented at this stage.
+ * It also allows users to manage their profile and preferences.
+ * 
  *
  * @author Developer
- * @version 2.0
+ * @version 3.0
  */
 
 package com.mycontactsapp.main;
@@ -90,9 +89,100 @@ public class Main {
         Optional<User> loginResult = authStrategy.authenticate(loginEmail, loginPassword, registeredUser);
         if (loginResult.isPresent()) {
             System.out.println("Login successful. Welcome, " + loginResult.get().getFirstName() + "!");
+            handleProfileMenu(scanner, loginResult.get());
         } else {
             System.out.println("Login failed. Invalid credentials.");
         }
+    }
+
+    private static void handleProfileMenu(Scanner scanner, User user) {
+        while (true) {
+            System.out.println("\nProfile Management");
+            System.out.print("Choose action (update-profile/change-password/preferences/logout): ");
+            String action = scanner.nextLine().trim().toLowerCase();
+
+            if ("update-profile".equals(action)) {
+                updateProfile(scanner, user);
+            } else if ("change-password".equals(action)) {
+                changePassword(scanner, user);
+            } else if ("preferences".equals(action)) {
+                updatePreferences(scanner, user);
+            } else if ("logout".equals(action)) {
+                System.out.println("Logged out.");
+                break;
+            } else {
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, or logout.");
+            }
+        }
+    }
+
+    private static void updateProfile(Scanner scanner, User user) {
+        try {
+            System.out.print("Update first name: ");
+            String firstName = scanner.nextLine();
+
+            System.out.print("Update last name: ");
+            String lastName = scanner.nextLine();
+
+            System.out.print("Update email: ");
+            String email = scanner.nextLine();
+
+            user.updateProfile(firstName, lastName, email);
+            System.out.println("Profile updated.");
+            System.out.println("Name: " + user.getFirstName() + " " + user.getLastName());
+            System.out.println("Email: " + user.getEmail());
+        } catch (InvalidInputException e) {
+            System.out.println("Profile update failed: " + e.getMessage());
+        }
+    }
+
+    private static void changePassword(Scanner scanner, User user) {
+        try {
+            System.out.print("Current password: ");
+            String currentPassword = scanner.nextLine();
+
+            System.out.print("New password: ");
+            String newPassword = scanner.nextLine();
+
+            user.changePassword(currentPassword, newPassword);
+            System.out.println("Password updated.");
+        } catch (InvalidInputException e) {
+            System.out.println("Password change failed: " + e.getMessage());
+        }
+    }
+
+    private static void updatePreferences(Scanner scanner, User user) {
+        try {
+            System.out.print("Enable email notifications (yes/no): ");
+            boolean emailNotifications = readYesNo(scanner.nextLine());
+
+            System.out.print("Switch user type (yes/no): ");
+            boolean switchUserType = readYesNo(scanner.nextLine());
+
+            if (switchUserType) {
+                UserType newType = user.toggleUserType();
+                System.out.println("User type switched to: " + newType);
+            }
+
+            user.updatePreferences(emailNotifications);
+            System.out.println("Preferences updated: " + user.getPreferences());
+        } catch (InvalidInputException e) {
+            System.out.println("Preferences update failed: " + e.getMessage());
+        }
+    }
+
+    private static boolean readYesNo(String input) throws InvalidInputException {
+        if (input == null) {
+            throw new InvalidInputException("Response is required.");
+        }
+        String normalized = input.trim().toLowerCase();
+        if ("yes".equals(normalized) || "y".equals(normalized)) {
+            return true;
+        }
+        if ("no".equals(normalized) || "n".equals(normalized)) {
+            return false;
+        }
+        throw new InvalidInputException("Please respond with yes or no.");
     }
 
     private static User findUserByEmail(List<User> registeredUsers, String email) {
