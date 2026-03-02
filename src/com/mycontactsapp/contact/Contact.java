@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 import com.mycontactsapp.ExceptionHandling.InvalidInputException;
 import com.mycontactsapp.validation.EmailValidator;
@@ -23,7 +25,7 @@ public abstract class Contact {
     private final List<PhoneNumber> phoneNumbers;
     private final List<EmailAddress> emailAddresses;
     private final Map<String, String> optionalFields;
-    private final List<String> tags;
+    private final Set<Tag> tags;
     private final LocalDateTime dateAdded;
     private int contactCount;
 
@@ -36,7 +38,7 @@ public abstract class Contact {
         this.phoneNumbers = new ArrayList<>();
         this.emailAddresses = new ArrayList<>();
         this.optionalFields = new LinkedHashMap<>();
-        this.tags = new ArrayList<>();
+        this.tags = new LinkedHashSet<>();
         this.dateAdded = LocalDateTime.now();
         this.contactCount = 0;
     }
@@ -50,7 +52,7 @@ public abstract class Contact {
         this.phoneNumbers = new ArrayList<>(other.phoneNumbers);
         this.emailAddresses = new ArrayList<>(other.emailAddresses);
         this.optionalFields = new LinkedHashMap<>(other.optionalFields);
-        this.tags = new ArrayList<>(other.tags);
+        this.tags = new LinkedHashSet<>(other.tags);
         this.dateAdded = other.dateAdded;
         this.contactCount = other.contactCount;
     }
@@ -82,8 +84,8 @@ public abstract class Contact {
         return Collections.unmodifiableMap(optionalFields);
     }
 
-    public List<String> getTags() {
-        return Collections.unmodifiableList(tags);
+    public Set<Tag> getTags() {
+        return Collections.unmodifiableSet(tags);
     }
 
     public LocalDateTime getDateAdded() {
@@ -126,9 +128,7 @@ public abstract class Contact {
         if (tag == null || tag.isEmpty()) {
             throw new InvalidInputException("Tag is required.");
         }
-        if (!tags.contains(tag)) {
-            tags.add(tag);
-        }
+        tags.add(new Tag(tag));
     }
 
     public ContactView toView() {
@@ -150,8 +150,7 @@ public abstract class Contact {
             personName = Optional.of(person.getFirstName() + " " + person.getLastName());
         }
 
-        return new ContactView(id, displayName, contactType, phoneNumbers, emailAddresses, optionalFields, tags,
-                personName, orgName, contactPerson);
+        return new ContactView(id, displayName, contactType, phoneNumbers, emailAddresses, optionalFields, personName, orgName, contactPerson);
     }
 
     @Override
@@ -432,7 +431,7 @@ public abstract class Contact {
         private final List<PhoneNumber> phoneNumbers;
         private final List<EmailAddress> emailAddresses;
         private final Map<String, String> optionalFields;
-        private final List<String> tags;
+        private final Set<Tag> tags;
         private final Optional<String> personName;
         private final Optional<String> organizationName;
         private final Optional<String> contactPerson;
@@ -447,7 +446,7 @@ public abstract class Contact {
             this.phoneNumbers = Collections.unmodifiableList(new ArrayList<>(phoneNumbers));
             this.emailAddresses = Collections.unmodifiableList(new ArrayList<>(emailAddresses));
             this.optionalFields = Collections.unmodifiableMap(new LinkedHashMap<>(optionalFields));
-            this.tags = Collections.emptyList();
+            this.tags = Collections.emptySet();
             this.personName = personName;
             this.organizationName = organizationName;
             this.contactPerson = contactPerson;
@@ -455,7 +454,7 @@ public abstract class Contact {
 
         public ContactView(UUID id, String displayName, String contactType,
                 List<PhoneNumber> phoneNumbers, List<EmailAddress> emailAddresses,
-                Map<String, String> optionalFields, List<String> tags,
+                Map<String, String> optionalFields, Set<Tag> tags,
                 Optional<String> personName, Optional<String> organizationName,
                 Optional<String> contactPerson) {
             this.id = id;
@@ -464,7 +463,7 @@ public abstract class Contact {
             this.phoneNumbers = Collections.unmodifiableList(new ArrayList<>(phoneNumbers));
             this.emailAddresses = Collections.unmodifiableList(new ArrayList<>(emailAddresses));
             this.optionalFields = Collections.unmodifiableMap(new LinkedHashMap<>(optionalFields));
-            this.tags = Collections.unmodifiableList(new ArrayList<>(tags));
+            this.tags = Collections.unmodifiableSet(new LinkedHashSet<>(tags));
             this.personName = personName;
             this.organizationName = organizationName;
             this.contactPerson = contactPerson;

@@ -1,6 +1,7 @@
 package com.mycontactsapp.contact.Search;
 
 import com.mycontactsapp.contact.Contact;
+import com.mycontactsapp.contact.Tag;
 
 /**
  * UC 9: Search Contacts
@@ -12,8 +13,8 @@ public class TagSearch implements ContactSearch {
         if (contact == null || term == null || term.isEmpty()) {
             return false;
         }
-        for (String tag : contact.getTags()) {
-            if (containsIgnoreCase(tag, term)) {
+        for (Tag tag : contact.getTags()) {
+            if (containsIgnoreCase(tag.getName(), term)) {
                 return true;
             }
         }

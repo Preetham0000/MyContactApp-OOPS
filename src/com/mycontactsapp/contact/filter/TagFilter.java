@@ -1,6 +1,7 @@
 package com.mycontactsapp.contact.filter;
 
 import com.mycontactsapp.contact.Contact;
+import com.mycontactsapp.contact.Tag;
 
 /**
  * UC 10: Basic Filtering
@@ -12,8 +13,8 @@ public class TagFilter implements ContactFilter {
         if (contact == null || term == null || term.isEmpty()) {
             return false;
         }
-        for (String tag : contact.getTags()) {
-            if (tag != null && tag.equalsIgnoreCase(term)) {
+        for (Tag tag : contact.getTags()) {
+            if (tag.getName().equalsIgnoreCase(term)) {
                 return true;
             }
         }
