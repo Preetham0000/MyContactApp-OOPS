@@ -34,6 +34,17 @@ public abstract class Contact {
         this.optionalFields = new LinkedHashMap<>();
     }
 
+    protected Contact(Contact other) throws InvalidInputException {
+        if (other == null) {
+            throw new InvalidInputException("Contact to copy is required.");
+        }
+        this.id = other.id;
+        this.displayName = other.displayName;
+        this.phoneNumbers = new ArrayList<>(other.phoneNumbers);
+        this.emailAddresses = new ArrayList<>(other.emailAddresses);
+        this.optionalFields = new LinkedHashMap<>(other.optionalFields);
+    }
+
     public UUID getId() {
         return id;
     }
@@ -197,6 +208,12 @@ public abstract class Contact {
             this.lastName = lastName;
         }
 
+        public PersonContact(PersonContact other) throws InvalidInputException {
+            super(other);
+            this.firstName = other.firstName;
+            this.lastName = other.lastName;
+        }
+
         public String getFirstName() {
             return firstName;
         }
@@ -244,6 +261,12 @@ public abstract class Contact {
             this.contactPerson = contactPerson == null ? "" : contactPerson;
         }
 
+        public OrganizationContact(OrganizationContact other) throws InvalidInputException {
+            super(other);
+            this.organizationName = other.organizationName;
+            this.contactPerson = other.contactPerson;
+        }
+
         public String getOrganizationName() {
             return organizationName;
         }
@@ -279,6 +302,33 @@ public abstract class Contact {
                 throw new InvalidInputException("Contact is required.");
             }
             contacts.add(contact);
+        }
+
+        public boolean replaceContact(Contact updated) throws InvalidInputException {
+            if (updated == null) {
+                throw new InvalidInputException("Updated contact is required.");
+            }
+            for (int i = 0; i < contacts.size(); i++) {
+                if (contacts.get(i).getId().equals(updated.getId())) {
+                    contacts.set(i, updated);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Optional<Contact> findById(String idInput) {
+            try {
+                UUID id = UUID.fromString(idInput);
+                for (Contact contact : contacts) {
+                    if (contact.getId().equals(id)) {
+                        return Optional.of(contact);
+                    }
+                }
+                return Optional.empty();
+            } catch (IllegalArgumentException e) {
+                return Optional.empty();
+            }
         }
 
         public List<Contact> getContacts() {

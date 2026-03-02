@@ -6,7 +6,7 @@
  * 
  *
  * @author Developer
- * @version 5.0
+ * @version 6.0
  */
 
 package com.mycontactsapp.main;
@@ -101,7 +101,7 @@ public class Main {
         // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/logout): ");
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/logout): ");
             String action = scanner.nextLine().toLowerCase();
 
             if ("update-profile".equals(action)) {
@@ -114,11 +114,13 @@ public class Main {
                 createContact(scanner, user);
             } else if ("view contact".equals(action) || "view-contact".equals(action)) {
                 viewContactDetails(scanner, user);
+            } else if ("edit contact".equals(action) || "edit-contact".equals(action)) {
+                editContact(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, or logout.");
             }
         }
     }
@@ -267,6 +269,110 @@ public class Main {
             System.out.println(found.get().toView());
         } else {
             System.out.println("Contact not found.");
+        }
+    }
+
+    private static void editContact(Scanner scanner, User user) {
+        if (user.getContactBook().getContacts().isEmpty()) {
+            System.out.println("No contacts saved yet.");
+            return;
+        }
+
+        System.out.println("Saved contacts:");
+        for (Contact contact : user.getContactBook().getContacts()) {
+            System.out.println(contact.getId() + " - " + contact.getDisplayName());
+        }
+
+        System.out.print("Enter contact ID to edit: ");
+        String idInput = scanner.nextLine();
+        if (idInput.isEmpty()) {
+            System.out.println("Contact ID is required.");
+            return;
+        }
+
+        Optional<Contact> found = user.getContactBook().findById(idInput);
+        if (!found.isPresent()) {
+            System.out.println("Contact not found.");
+            return;
+        }
+
+        try {
+            Contact current = found.get();
+            Contact updated;
+
+            if (current instanceof Contact.PersonContact) {
+                Contact.PersonContact person = (Contact.PersonContact) current;
+                Contact.PersonContact copy = new Contact.PersonContact(person);
+
+                System.out.print("New first name (leave blank to keep): ");
+                String firstName = scanner.nextLine();
+                if (!firstName.isEmpty()) {
+                    copy.setFirstName(firstName);
+                }
+
+                System.out.print("New last name (leave blank to keep): ");
+                String lastName = scanner.nextLine();
+                if (!lastName.isEmpty()) {
+                    copy.setLastName(lastName);
+                }
+
+                updated = copy;
+            } else if (current instanceof Contact.OrganizationContact) {
+                Contact.OrganizationContact org = (Contact.OrganizationContact) current;
+                Contact.OrganizationContact copy = new Contact.OrganizationContact(org);
+
+                System.out.print("New organization name (leave blank to keep): ");
+                String orgName = scanner.nextLine();
+                if (!orgName.isEmpty()) {
+                    copy.setOrganizationName(orgName);
+                }
+
+                System.out.print("New contact person (leave blank to keep): ");
+                String contactPerson = scanner.nextLine();
+                if (!contactPerson.isEmpty()) {
+                    copy.setContactPerson(contactPerson);
+                }
+
+                updated = copy;
+            } else {
+                System.out.println("Unsupported contact type.");
+                return;
+            }
+
+            System.out.print("Add another phone (yes/no): ");
+            if (readYesNo(scanner.nextLine())) {
+                System.out.print("Phone label: ");
+                String label = scanner.nextLine();
+                System.out.print("Phone number: ");
+                String number = scanner.nextLine();
+                updated.addPhoneNumber(new Contact.PhoneNumber(label, number));
+            }
+
+            System.out.print("Add another email (yes/no): ");
+            if (readYesNo(scanner.nextLine())) {
+                System.out.print("Email label: ");
+                String label = scanner.nextLine();
+                System.out.print("Email address: ");
+                String address = scanner.nextLine();
+                updated.addEmailAddress(new Contact.EmailAddress(label, address));
+            }
+
+            System.out.print("Add another optional field (yes/no): ");
+            if (readYesNo(scanner.nextLine())) {
+                System.out.print("Field name: ");
+                String key = scanner.nextLine();
+                System.out.print("Field value: ");
+                String value = scanner.nextLine();
+                updated.addOptionalField(key, value);
+            }
+
+            if (user.getContactBook().replaceContact(updated)) {
+                System.out.println("Contact updated.");
+            } else {
+                System.out.println("Contact update failed.");
+            }
+        } catch (InvalidInputException e) {
+            System.out.println("Edit failed: " + e.getMessage());
         }
     }
 
