@@ -6,7 +6,7 @@
  * 
  *
  * @author Developer
- * @version 10.0
+ * @version 11.0
  */
 
 package com.mycontactsapp.main;
@@ -111,7 +111,7 @@ public class Main {
         // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/Bulk Operations/Search Contacts/Filter Contacts/logout): ");
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/Bulk Operations/Search Contacts/Filter Contacts/Manage Tags/logout): ");
             String action = scanner.nextLine().toLowerCase();
 
             if ("update-profile".equals(action)) {
@@ -134,11 +134,13 @@ public class Main {
                 searchContacts(scanner, user);
             } else if ("filter contacts".equals(action) || "filter".equals(action)) {
                 filterContacts(scanner, user);
+            } else if ("manage tags".equals(action) || "tags".equals(action)) {
+                manageTags(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, Bulk Operations, Search Contacts, Filter Contacts, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, Bulk Operations, Search Contacts, Filter Contacts, Manage Tags, or logout.");
             }
         }
     }
@@ -619,6 +621,83 @@ public class Main {
             System.out.println(contact.getId() + " - " + contact.getDisplayName());
         }
         System.out.println("Matches found: " + matches.size());
+    }
+
+    private static void manageTags(Scanner scanner, User user) {
+        if (user.getContactBook().getContacts().isEmpty()) {
+            System.out.println("No contacts saved yet.");
+            return;
+        }
+
+        System.out.println("Saved contacts:");
+        for (Contact contact : user.getContactBook().getContacts()) {
+            System.out.println(contact.getId() + " - " + contact.getDisplayName());
+        }
+
+        System.out.print("Enter contact ID: ");
+        String idInput = scanner.nextLine();
+        if (idInput.isEmpty()) {
+            System.out.println("Contact ID is required.");
+            return;
+        }
+
+        Optional<Contact> found = user.getContactBook().findById(idInput);
+        if (!found.isPresent()) {
+            System.out.println("Contact not found.");
+            return;
+        }
+
+        Contact contact = found.get();
+        System.out.print("Action (list/add/remove): ");
+        String action = scanner.nextLine().toLowerCase();
+
+        if ("list".equals(action)) {
+            System.out.println("Tags: " + contact.getTags());
+            return;
+        }
+
+        if ("add".equals(action)) {
+            System.out.print("Enter tags (comma-separated): ");
+            List<String> tags = parseIds(scanner.nextLine());
+            if (tags.isEmpty()) {
+                System.out.println("No tags provided.");
+                return;
+            }
+            int added = 0;
+            for (String tag : tags) {
+                try {
+                    contact.addTag(tag);
+                    added++;
+                } catch (InvalidInputException e) {
+                    System.out.println("Skip tag: " + e.getMessage());
+                }
+            }
+            System.out.println("Tags added: " + added);
+            return;
+        }
+
+        if ("remove".equals(action)) {
+            System.out.print("Enter tags to remove (comma-separated): ");
+            List<String> tags = parseIds(scanner.nextLine());
+            if (tags.isEmpty()) {
+                System.out.println("No tags provided.");
+                return;
+            }
+            int removed = 0;
+            for (String tag : tags) {
+                try {
+                    if (contact.removeTag(tag)) {
+                        removed++;
+                    }
+                } catch (InvalidInputException e) {
+                    System.out.println("Skip tag: " + e.getMessage());
+                }
+            }
+            System.out.println("Tags removed: " + removed);
+            return;
+        }
+
+        System.out.println("Unknown action.");
     }
 
     private static List<String> parseIds(String input) {

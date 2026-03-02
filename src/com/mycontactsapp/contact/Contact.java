@@ -131,6 +131,13 @@ public abstract class Contact {
         tags.add(new Tag(tag));
     }
 
+    public boolean removeTag(String tag) throws InvalidInputException {
+        if (tag == null || tag.isEmpty()) {
+            throw new InvalidInputException("Tag is required.");
+        }
+        return tags.remove(new Tag(tag));
+    }
+
     public ContactView toView() {
         String contactType = getClass().getSimpleName();
         Optional<String> orgName = Optional.empty();
