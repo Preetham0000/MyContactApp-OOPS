@@ -6,7 +6,7 @@
  * 
  *
  * @author Developer
- * @version 8.0
+ * @version 9.0
  */
 
 package com.mycontactsapp.main;
@@ -16,6 +16,11 @@ import com.mycontactsapp.ExceptionHandling.InvalidInputException;
 import com.mycontactsapp.auth.AuthenticationStrategy;
 import com.mycontactsapp.auth.BasicAuth;
 import com.mycontactsapp.contact.Contact;
+import com.mycontactsapp.contact.Search.ContactSearch;
+import com.mycontactsapp.contact.Search.EmailSearch;
+import com.mycontactsapp.contact.Search.NameSearch;
+import com.mycontactsapp.contact.Search.PhoneSearch;
+import com.mycontactsapp.contact.Search.TagSearch;
 import com.mycontactsapp.user.User;
 import com.mycontactsapp.user.UserType;
 import com.mycontactsapp.user.BulkContactOperations;
@@ -102,7 +107,7 @@ public class Main {
         // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/Bulk Operations/logout): ");
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/Bulk Operations/Search Contacts/logout): ");
             String action = scanner.nextLine().toLowerCase();
 
             if ("update-profile".equals(action)) {
@@ -121,11 +126,13 @@ public class Main {
                 deleteContact(scanner, user);
             } else if ("bulk operations".equals(action) || "bulk-operations".equals(action)) {
                 bulkOperations(scanner, user);
+            } else if ("search contacts".equals(action) || "search".equals(action)) {
+                searchContacts(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, Bulk Operations, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, Bulk Operations, Search Contacts, or logout.");
             }
         }
     }
@@ -508,6 +515,51 @@ public class Main {
         }
 
         System.out.println("Unknown bulk action.");
+    }
+
+    private static void searchContacts(Scanner scanner, User user) {
+        if (user.getContactBook().getContacts().isEmpty()) {
+            System.out.println("No contacts saved yet.");
+            return;
+        }
+
+        System.out.print("Search by (name/phone/email/tag): ");
+        String type = scanner.nextLine().toLowerCase();
+
+        ContactSearch search;
+        if ("name".equals(type)) {
+            search = new NameSearch();
+        } else if ("phone".equals(type)) {
+            search = new PhoneSearch();
+        } else if ("email".equals(type)) {
+            search = new EmailSearch();
+        } else if ("tag".equals(type)) {
+            search = new TagSearch();
+        } else {
+            System.out.println("Unknown search type.");
+            return;
+        }
+
+        System.out.print("Search term: ");
+        String term = scanner.nextLine();
+        if (term.isEmpty()) {
+            System.out.println("Search term is required.");
+            return;
+        }
+
+        int matches = 0;
+        for (Contact contact : user.getContactBook().getContacts()) {
+            if (search.matches(contact, term)) {
+                System.out.println(contact.getId() + " - " + contact.getDisplayName());
+                matches++;
+            }
+        }
+
+        if (matches == 0) {
+            System.out.println("No matches found.");
+        } else {
+            System.out.println("Matches found: " + matches);
+        }
     }
 
     private static List<String> parseIds(String input) {
