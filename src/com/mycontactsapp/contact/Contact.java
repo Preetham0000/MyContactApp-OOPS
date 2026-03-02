@@ -331,6 +331,14 @@ public abstract class Contact {
             }
         }
 
+        public boolean removeById(String idInput) {
+            Optional<Contact> found = findById(idInput);
+            if (!found.isPresent()) {
+                return false;
+            }
+            return contacts.remove(found.get());
+        }
+
         public List<Contact> getContacts() {
             return Collections.unmodifiableList(contacts);
         }

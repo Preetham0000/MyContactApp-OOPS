@@ -6,7 +6,7 @@
  * 
  *
  * @author Developer
- * @version 6.0
+ * @version 7.0
  */
 
 package com.mycontactsapp.main;
@@ -101,7 +101,7 @@ public class Main {
         // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/logout): ");
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/logout): ");
             String action = scanner.nextLine().toLowerCase();
 
             if ("update-profile".equals(action)) {
@@ -116,11 +116,13 @@ public class Main {
                 viewContactDetails(scanner, user);
             } else if ("edit contact".equals(action) || "edit-contact".equals(action)) {
                 editContact(scanner, user);
+            } else if ("delete contact".equals(action) || "delete-contact".equals(action)) {
+                deleteContact(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, or logout.");
             }
         }
     }
@@ -373,6 +375,51 @@ public class Main {
             }
         } catch (InvalidInputException e) {
             System.out.println("Edit failed: " + e.getMessage());
+        }
+    }
+
+    private static void deleteContact(Scanner scanner, User user) {
+        if (user.getContactBook().getContacts().isEmpty()) {
+            System.out.println("No contacts saved yet.");
+            return;
+        }
+
+        System.out.println("Saved contacts:");
+        for (Contact contact : user.getContactBook().getContacts()) {
+            System.out.println(contact.getId() + " - " + contact.getDisplayName());
+        }
+
+        System.out.print("Enter contact ID to delete: ");
+        String idInput = scanner.nextLine();
+        if (idInput.isEmpty()) {
+            System.out.println("Contact ID is required.");
+            return;
+        }
+
+        Optional<Contact> found = user.getContactBook().findById(idInput);
+        if (!found.isPresent()) {
+            System.out.println("Contact not found.");
+            return;
+        }
+
+        System.out.print("Are you sure you want to delete this contact (yes/no): ");
+        boolean confirm;
+        try {
+            confirm = readYesNo(scanner.nextLine());
+        } catch (InvalidInputException e) {
+            System.out.println("Delete canceled.");
+            return;
+        }
+
+        if (!confirm) {
+            System.out.println("Delete canceled.");
+            return;
+        }
+
+        if (user.getContactBook().removeById(idInput)) {
+            System.out.println("Contact deleted.");
+        } else {
+            System.out.println("Delete failed.");
         }
     }
 
