@@ -22,6 +22,7 @@ public abstract class Contact {
     private final List<PhoneNumber> phoneNumbers;
     private final List<EmailAddress> emailAddresses;
     private final Map<String, String> optionalFields;
+    private final List<String> tags;
 
     protected Contact(String displayName) throws InvalidInputException {
         if (displayName == null || displayName.isEmpty()) {
@@ -32,6 +33,7 @@ public abstract class Contact {
         this.phoneNumbers = new ArrayList<>();
         this.emailAddresses = new ArrayList<>();
         this.optionalFields = new LinkedHashMap<>();
+        this.tags = new ArrayList<>();
     }
 
     protected Contact(Contact other) throws InvalidInputException {
@@ -43,6 +45,7 @@ public abstract class Contact {
         this.phoneNumbers = new ArrayList<>(other.phoneNumbers);
         this.emailAddresses = new ArrayList<>(other.emailAddresses);
         this.optionalFields = new LinkedHashMap<>(other.optionalFields);
+        this.tags = new ArrayList<>(other.tags);
     }
 
     public UUID getId() {
@@ -72,6 +75,10 @@ public abstract class Contact {
         return Collections.unmodifiableMap(optionalFields);
     }
 
+    public List<String> getTags() {
+        return Collections.unmodifiableList(tags);
+    }
+
     public void addPhoneNumber(PhoneNumber phoneNumber) throws InvalidInputException {
         if (phoneNumber == null) {
             throw new InvalidInputException("Phone number is required.");
@@ -96,6 +103,15 @@ public abstract class Contact {
         optionalFields.put(key, value);
     }
 
+    public void addTag(String tag) throws InvalidInputException {
+        if (tag == null || tag.isEmpty()) {
+            throw new InvalidInputException("Tag is required.");
+        }
+        if (!tags.contains(tag)) {
+            tags.add(tag);
+        }
+    }
+
     public ContactView toView() {
         String contactType = getClass().getSimpleName();
         Optional<String> orgName = Optional.empty();
@@ -115,7 +131,7 @@ public abstract class Contact {
             personName = Optional.of(person.getFirstName() + " " + person.getLastName());
         }
 
-        return new ContactView(id, displayName, contactType, phoneNumbers, emailAddresses, optionalFields,
+        return new ContactView(id, displayName, contactType, phoneNumbers, emailAddresses, optionalFields, tags,
                 personName, orgName, contactPerson);
     }
 
@@ -127,6 +143,7 @@ public abstract class Contact {
                 ", phoneNumbers=" + phoneNumbers +
                 ", emailAddresses=" + emailAddresses +
                 ", optionalFields=" + optionalFields +
+                ", tags=" + tags +
                 '}';
     }
 
@@ -339,6 +356,51 @@ public abstract class Contact {
             return contacts.remove(found.get());
         }
 
+        public int bulkRemove(List<String> ids) {
+            int removed = 0;
+            if (ids == null) {
+                return 0;
+            }
+            for (String id : ids) {
+                if (id != null && removeById(id)) {
+                    removed++;
+                }
+            }
+            return removed;
+        }
+
+        public int bulkAddTag(List<String> ids, String tag) throws InvalidInputException {
+            int updated = 0;
+            if (ids == null) {
+                return 0;
+            }
+            for (String id : ids) {
+                Optional<Contact> found = findById(id);
+                if (found.isPresent()) {
+                    found.get().addTag(tag);
+                    updated++;
+                }
+            }
+            return updated;
+        }
+
+        public String exportCsv(List<Contact> selection) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("id,displayName,type,tags,phones,emails\n");
+            if (selection == null) {
+                return builder.toString();
+            }
+            for (Contact contact : selection) {
+                builder.append(contact.getId()).append(",")
+                        .append(contact.getDisplayName()).append(",")
+                        .append(contact.getClass().getSimpleName()).append(",")
+                        .append(contact.getTags()).append(",")
+                        .append(contact.getPhoneNumbers()).append(",")
+                        .append(contact.getEmailAddresses()).append("\n");
+            }
+            return builder.toString();
+        }
+
         public List<Contact> getContacts() {
             return Collections.unmodifiableList(contacts);
         }
@@ -351,6 +413,7 @@ public abstract class Contact {
         private final List<PhoneNumber> phoneNumbers;
         private final List<EmailAddress> emailAddresses;
         private final Map<String, String> optionalFields;
+        private final List<String> tags;
         private final Optional<String> personName;
         private final Optional<String> organizationName;
         private final Optional<String> contactPerson;
@@ -365,6 +428,24 @@ public abstract class Contact {
             this.phoneNumbers = Collections.unmodifiableList(new ArrayList<>(phoneNumbers));
             this.emailAddresses = Collections.unmodifiableList(new ArrayList<>(emailAddresses));
             this.optionalFields = Collections.unmodifiableMap(new LinkedHashMap<>(optionalFields));
+            this.tags = Collections.emptyList();
+            this.personName = personName;
+            this.organizationName = organizationName;
+            this.contactPerson = contactPerson;
+        }
+
+        public ContactView(UUID id, String displayName, String contactType,
+                List<PhoneNumber> phoneNumbers, List<EmailAddress> emailAddresses,
+                Map<String, String> optionalFields, List<String> tags,
+                Optional<String> personName, Optional<String> organizationName,
+                Optional<String> contactPerson) {
+            this.id = id;
+            this.displayName = displayName;
+            this.contactType = contactType;
+            this.phoneNumbers = Collections.unmodifiableList(new ArrayList<>(phoneNumbers));
+            this.emailAddresses = Collections.unmodifiableList(new ArrayList<>(emailAddresses));
+            this.optionalFields = Collections.unmodifiableMap(new LinkedHashMap<>(optionalFields));
+            this.tags = Collections.unmodifiableList(new ArrayList<>(tags));
             this.personName = personName;
             this.organizationName = organizationName;
             this.contactPerson = contactPerson;
@@ -372,10 +453,11 @@ public abstract class Contact {
 
         @Override
         public String toString() {
-            return String.format("Contact Details\nID: %s\nName: %s\nType: %s\nPerson: %s\nOrganization: %s\nContact Person: %s\nPhones: %s\nEmails: %s\nOptional: %s",
+            return String.format("Contact Details\nID: %s\nName: %s\nType: %s\nTags: %s\nPerson: %s\nOrganization: %s\nContact Person: %s\nPhones: %s\nEmails: %s\nOptional: %s",
                     id,
                     displayName,
                     contactType,
+                    tags,
                     personName.orElse("N/A"),
                     organizationName.orElse("N/A"),
                     contactPerson.orElse("N/A"),

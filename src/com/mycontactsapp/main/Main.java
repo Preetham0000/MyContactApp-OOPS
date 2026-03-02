@@ -6,7 +6,7 @@
  * 
  *
  * @author Developer
- * @version 7.0
+ * @version 8.0
  */
 
 package com.mycontactsapp.main;
@@ -18,6 +18,7 @@ import com.mycontactsapp.auth.BasicAuth;
 import com.mycontactsapp.contact.Contact;
 import com.mycontactsapp.user.User;
 import com.mycontactsapp.user.UserType;
+import com.mycontactsapp.user.BulkContactOperations;
 
 import java.util.*;
 
@@ -101,7 +102,7 @@ public class Main {
         // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/logout): ");
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/Bulk Operations/logout): ");
             String action = scanner.nextLine().toLowerCase();
 
             if ("update-profile".equals(action)) {
@@ -118,11 +119,13 @@ public class Main {
                 editContact(scanner, user);
             } else if ("delete contact".equals(action) || "delete-contact".equals(action)) {
                 deleteContact(scanner, user);
+            } else if ("bulk operations".equals(action) || "bulk-operations".equals(action)) {
+                bulkOperations(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, Bulk Operations, or logout.");
             }
         }
     }
@@ -402,7 +405,7 @@ public class Main {
             return;
         }
 
-        System.out.print("Are you sure you want to delete this contact (yes/no): ");
+        System.out.print("Confirm delete (yes/no): ");
         boolean confirm;
         try {
             confirm = readYesNo(scanner.nextLine());
@@ -421,6 +424,105 @@ public class Main {
         } else {
             System.out.println("Delete failed.");
         }
+    }
+
+    private static void bulkOperations(Scanner scanner, User user) {
+        if (user.getContactBook().getContacts().isEmpty()) {
+            System.out.println("No contacts saved yet.");
+            return;
+        }
+
+        BulkContactOperations operations = new BulkContactOperations();
+        System.out.print("Bulk action (delete/tag/export): ");
+        String action = scanner.nextLine().toLowerCase();
+
+        if ("delete".equals(action)) {
+            System.out.print("Enter contact IDs (comma-separated): ");
+            List<String> ids = parseIds(scanner.nextLine());
+            if (ids.isEmpty()) {
+                System.out.println("No IDs provided.");
+                return;
+            }
+            System.out.print("Confirm delete (yes/no): ");
+            boolean confirm;
+            try {
+                confirm = readYesNo(scanner.nextLine());
+            } catch (InvalidInputException e) {
+                System.out.println("Bulk delete canceled.");
+                return;
+            }
+            if (!confirm) {
+                System.out.println("Bulk delete canceled.");
+                return;
+            }
+            try {
+                int removed = operations.bulkDelete(user.getContactBook(), ids);
+                System.out.println("Deleted contacts: " + removed);
+            } catch (InvalidInputException e) {
+                System.out.println("Bulk delete failed: " + e.getMessage());
+            }
+            return;
+        }
+
+        if ("tag".equals(action)) {
+            System.out.print("Tag name: ");
+            String tag = scanner.nextLine();
+            System.out.print("Enter contact IDs (comma-separated): ");
+            List<String> ids = parseIds(scanner.nextLine());
+            if (ids.isEmpty()) {
+                System.out.println("No IDs provided.");
+                return;
+            }
+            try {
+                int updated = operations.bulkTag(user.getContactBook(), ids, tag);
+                System.out.println("Tagged contacts: " + updated);
+            } catch (InvalidInputException e) {
+                System.out.println("Bulk tag failed: " + e.getMessage());
+            }
+            return;
+        }
+
+        if ("export".equals(action)) {
+            System.out.print("Export all contacts (yes/no): ");
+            boolean exportAll;
+            try {
+                exportAll = readYesNo(scanner.nextLine());
+            } catch (InvalidInputException e) {
+                System.out.println("Export canceled.");
+                return;
+            }
+            List<String> ids = new ArrayList<>();
+            if (!exportAll) {
+                System.out.print("Enter contact IDs (comma-separated): ");
+                ids = parseIds(scanner.nextLine());
+            }
+            System.out.print("Export file path: ");
+            String filePath = scanner.nextLine();
+            try {
+                operations.exportToFile(user.getContactBook(), ids, filePath);
+                System.out.println("Exported to: " + filePath);
+            } catch (InvalidInputException e) {
+                System.out.println("Export failed: " + e.getMessage());
+            }
+            return;
+        }
+
+        System.out.println("Unknown bulk action.");
+    }
+
+    private static List<String> parseIds(String input) {
+        List<String> ids = new ArrayList<>();
+        if (input == null || input.isEmpty()) {
+            return ids;
+        }
+        String[] parts = input.split(",");
+        for (String part : parts) {
+            String value = part.trim();
+            if (!value.isEmpty()) {
+                ids.add(value);
+            }
+        }
+        return ids;
     }
 
     private static boolean readYesNo(String input) throws InvalidInputException {
