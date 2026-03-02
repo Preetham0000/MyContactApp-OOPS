@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 import com.mycontactsapp.ExceptionHandling.InvalidInputException;
 import com.mycontactsapp.validation.EmailValidator;
@@ -23,6 +24,8 @@ public abstract class Contact {
     private final List<EmailAddress> emailAddresses;
     private final Map<String, String> optionalFields;
     private final List<String> tags;
+    private final LocalDateTime dateAdded;
+    private int contactCount;
 
     protected Contact(String displayName) throws InvalidInputException {
         if (displayName == null || displayName.isEmpty()) {
@@ -34,6 +37,8 @@ public abstract class Contact {
         this.emailAddresses = new ArrayList<>();
         this.optionalFields = new LinkedHashMap<>();
         this.tags = new ArrayList<>();
+        this.dateAdded = LocalDateTime.now();
+        this.contactCount = 0;
     }
 
     protected Contact(Contact other) throws InvalidInputException {
@@ -46,6 +51,8 @@ public abstract class Contact {
         this.emailAddresses = new ArrayList<>(other.emailAddresses);
         this.optionalFields = new LinkedHashMap<>(other.optionalFields);
         this.tags = new ArrayList<>(other.tags);
+        this.dateAdded = other.dateAdded;
+        this.contactCount = other.contactCount;
     }
 
     public UUID getId() {
@@ -77,6 +84,18 @@ public abstract class Contact {
 
     public List<String> getTags() {
         return Collections.unmodifiableList(tags);
+    }
+
+    public LocalDateTime getDateAdded() {
+        return dateAdded;
+    }
+
+    public int getContactCount() {
+        return contactCount;
+    }
+
+    public void incrementContactCount() {
+        contactCount++;
     }
 
     public void addPhoneNumber(PhoneNumber phoneNumber) throws InvalidInputException {

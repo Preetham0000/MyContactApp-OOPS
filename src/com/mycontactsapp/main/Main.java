@@ -6,7 +6,7 @@
  * 
  *
  * @author Developer
- * @version 9.0
+ * @version 10.0
  */
 
 package com.mycontactsapp.main;
@@ -21,6 +21,10 @@ import com.mycontactsapp.contact.Search.EmailSearch;
 import com.mycontactsapp.contact.Search.NameSearch;
 import com.mycontactsapp.contact.Search.PhoneSearch;
 import com.mycontactsapp.contact.Search.TagSearch;
+import com.mycontactsapp.contact.filter.ContactFilter;
+import com.mycontactsapp.contact.filter.DateAddedFilter;
+import com.mycontactsapp.contact.filter.FrequentlyContactedFilter;
+import com.mycontactsapp.contact.filter.TagFilter;
 import com.mycontactsapp.user.User;
 import com.mycontactsapp.user.UserType;
 import com.mycontactsapp.user.BulkContactOperations;
@@ -107,7 +111,7 @@ public class Main {
         // Logged-in user actions
         while (true) {
             System.out.println("\nProfile Management");
-            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/Bulk Operations/Search Contacts/logout): ");
+            System.out.print("Choose action (update-profile/change-password/preferences/Create Contact/View Contact/Edit Contact/Delete Contact/Bulk Operations/Search Contacts/Filter Contacts/logout): ");
             String action = scanner.nextLine().toLowerCase();
 
             if ("update-profile".equals(action)) {
@@ -128,11 +132,13 @@ public class Main {
                 bulkOperations(scanner, user);
             } else if ("search contacts".equals(action) || "search".equals(action)) {
                 searchContacts(scanner, user);
+            } else if ("filter contacts".equals(action) || "filter".equals(action)) {
+                filterContacts(scanner, user);
             } else if ("logout".equals(action)) {
                 System.out.println("Logged out.");
                 break;
             } else {
-                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, Bulk Operations, Search Contacts, or logout.");
+                System.out.println("Invalid option. Please enter update-profile, change-password, preferences, Create Contact, View Contact, Edit Contact, Delete Contact, Bulk Operations, Search Contacts, Filter Contacts, or logout.");
             }
         }
     }
@@ -278,6 +284,7 @@ public class Main {
 
         Optional<Contact> found = findContactById(user.getContactBook().getContacts(), idInput);
         if (found.isPresent()) {
+            found.get().incrementContactCount();
             System.out.println(found.get().toView());
         } else {
             System.out.println("Contact not found.");
@@ -560,6 +567,58 @@ public class Main {
         } else {
             System.out.println("Matches found: " + matches);
         }
+    }
+
+    private static void filterContacts(Scanner scanner, User user) {
+        if (user.getContactBook().getContacts().isEmpty()) {
+            System.out.println("No contacts saved yet.");
+            return;
+        }
+
+        System.out.print("Filter by (tag/date/frequent): ");
+        String type = scanner.nextLine().toLowerCase();
+
+        ContactFilter filter;
+        String term = "";
+        if ("tag".equals(type)) {
+            filter = new TagFilter();
+            System.out.print("Tag name: ");
+            term = scanner.nextLine();
+        } else if ("date".equals(type)) {
+            filter = new DateAddedFilter();
+            System.out.print("Date (YYYY-MM-DD): ");
+            term = scanner.nextLine();
+        } else if ("frequent".equals(type)) {
+            filter = new FrequentlyContactedFilter();
+            System.out.print("Minimum count (default 1): ");
+            term = scanner.nextLine();
+        } else {
+            System.out.println("Unknown filter type.");
+            return;
+        }
+
+        List<Contact> matches = new ArrayList<>();
+        for (Contact contact : user.getContactBook().getContacts()) {
+            if (filter.matches(contact, term)) {
+                matches.add(contact);
+            }
+        }
+
+        if (matches.isEmpty()) {
+            System.out.println("No matches found.");
+            return;
+        }
+
+        if ("date".equals(type)) {
+            Collections.sort(matches, Comparator.comparing(Contact::getDateAdded));
+        } else if ("frequent".equals(type)) {
+            Collections.sort(matches, Comparator.comparing(Contact::getContactCount).reversed());
+        }
+
+        for (Contact contact : matches) {
+            System.out.println(contact.getId() + " - " + contact.getDisplayName());
+        }
+        System.out.println("Matches found: " + matches.size());
     }
 
     private static List<String> parseIds(String input) {
