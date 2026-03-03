@@ -1,12 +1,10 @@
 /**
- * MyContactApp - Use Case 1,2,3 and 4: Registration, Authentication, Profile Management and Contact Creation
- * 
- * It demonstrates basic registration with validation and simple authentication.
- * It also allows users to manage their profile, preferences, and contacts.
- * 
+ * MyContactApp 
+ * Use case 12: Apply tags to contacts
+ * User assigns one or multiple tags to contacts.
  *
  * @author Developer
- * @version 11.0
+ * @version 12.0
  */
 
 package com.mycontactsapp.main;
